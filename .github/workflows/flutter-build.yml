@@ -116,7 +116,7 @@ jobs:
           flutter precache --windows
           Invoke-WebRequest -Uri https://github.com/rustdesk/engine/releases/download/main/windows-x64-release.zip -OutFile windows-x64-release.zip
           Expand-Archive -Path windows-x64-release.zip -DestinationPath windows-x64-release
-          mv -Force windows-x64-release/*  C:/hostedtoolcache/windows/flutter/stable-${{ env.FLUTTER_VERSION }}-x64/bin/cache/artifacts/engine/windows-x64-release/
+          mv -Force windows-x64-release/* C:/hostedtoolcache/windows/flutter/stable-${{ env.FLUTTER_VERSION }}-x64/bin/cache/artifacts/engine/windows-x64-release/
 
       - name: Patch flutter
         shell: bash
@@ -202,6 +202,7 @@ jobs:
           } catch {
               Write-Host "Ingore the printer driver error."
           }
+          mv -Force ./rustdesk/rustdesk.exe ./rustdesk/agatdesk.exe
 
       - name: find Runner.res
         # Windows: find Runner.res (compiled from ./flutter/windows/runner/Runner.rc), copy to ./Runner.res
@@ -247,10 +248,10 @@ jobs:
           sed -i '/dpiAware/d' res/manifest.xml
           pushd ./libs/portable
           pip3 install -r requirements.txt
-          python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/rustdesk.exe
+          python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/agatdesk.exe
           popd
           mkdir -p ./SignOutput
-          mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
+          mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/agatdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
 
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2
@@ -279,7 +280,7 @@ jobs:
           tag_name: ${{ env.TAG_NAME }}
           files: |
             ./SignOutput/rustdesk-*.msi
-            ./SignOutput/rustdesk-*.exe
+            ./SignOutput/agatdesk-*.exe
 
   # The fallback for the flutter version, we use Sciter for 32bit Windows.
   build-for-windows-sciter:
@@ -866,36 +867,36 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-               clang \
-               cmake \
-               curl \
-               gcc-multilib \
-               git \
-               g++ \
-               g++-multilib \
-               libayatana-appindicator3-dev \
-               libasound2-dev \
-               libc6-dev \
-               libclang-dev \
-               libunwind-dev \
-               libgstreamer1.0-dev \
-               libgstreamer-plugins-base1.0-dev \
-               libgtk-3-dev \
-               libpam0g-dev \
-               libpulse-dev \
-               libva-dev \
-               libxcb-randr0-dev \
-               libxcb-shape0-dev \
-               libxcb-xfixes0-dev \
-               libxdo-dev \
-               libxfixes-dev \
-               llvm-dev \
-               nasm \
-               ninja-build \
-               openjdk-17-jdk-headless \
-               pkg-config \
-               tree \
-               wget
+                 clang \
+                 cmake \
+                 curl \
+                 gcc-multilib \
+                 git \
+                 g++ \
+                 g++-multilib \
+                 libayatana-appindicator3-dev \
+                 libasound2-dev \
+                 libc6-dev \
+                 libclang-dev \
+                 libunwind-dev \
+                 libgstreamer1.0-dev \
+                 libgstreamer-plugins-base1.0-dev \
+                 libgtk-3-dev \
+                 libpam0g-dev \
+                 libpulse-dev \
+                 libva-dev \
+                 libxcb-randr0-dev \
+                 libxcb-shape0-dev \
+                 libxcb-xfixes0-dev \
+                 libxdo-dev \
+                 libxfixes-dev \
+                 llvm-dev \
+                 nasm \
+                 ninja-build \
+                 openjdk-17-jdk-headless \
+                 pkg-config \
+                 tree \
+                 wget
 
       - name: Checkout source code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -1081,21 +1082,12 @@ jobs:
           # env.ANDROID_SIGN_TOOL_VERSION is set by Step "Setup sign tool version variable"
           BUILD_TOOLS_VERSION: ${{ env.ANDROID_SIGN_TOOL_VERSION }}
 
-      - name: Upload Artifacts
-        if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
+      - name: Upload unsigned APK to Artifacts
+        if: env.ANDROID_SIGNING_KEY == null && env.UPLOAD_ARTIFACT == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.apk
-          path: ${{steps.sign-rustdesk.outputs.signedReleaseFile}}
-
-      - name: Publish signed apk package
-        if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
-        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
-        with:
-          prerelease: true
-          tag_name: ${{ env.TAG_NAME }}
-          files: |
-            ${{steps.sign-rustdesk.outputs.signedReleaseFile}}
+          name: agatdesk-android-unsigned-${{ matrix.job.arch }}
+          path: signed-apk/*.apk
 
       - name: Publish unsigned apk package
         if: env.ANDROID_SIGNING_KEY == null && env.UPLOAD_ARTIFACT == 'true'
@@ -1138,36 +1130,36 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-               clang \
-               cmake \
-               curl \
-               gcc-multilib \
-               git \
-               g++ \
-               g++-multilib \
-               libayatana-appindicator3-dev \
-               libasound2-dev \
-               libc6-dev \
-               libclang-dev \
-               libunwind-dev \
-               libgstreamer1.0-dev \
-               libgstreamer-plugins-base1.0-dev \
-               libgtk-3-dev \
-               libpam0g-dev \
-               libpulse-dev \
-               libva-dev \
-               libxcb-randr0-dev \
-               libxcb-shape0-dev \
-               libxcb-xfixes0-dev \
-               libxdo-dev \
-               libxfixes-dev \
-               llvm-dev \
-               nasm \
-               ninja-build \
-               openjdk-17-jdk-headless \
-               pkg-config \
-               tree \
-               wget
+                 clang \
+                 cmake \
+                 curl \
+                 gcc-multilib \
+                 git \
+                 g++ \
+                 g++-multilib \
+                 libayatana-appindicator3-dev \
+                 libasound2-dev \
+                 libc6-dev \
+                 libclang-dev \
+                 libunwind-dev \
+                 libgstreamer1.0-dev \
+                 libgstreamer-plugins-base1.0-dev \
+                 libgtk-3-dev \
+                 libpam0g-dev \
+                 libpulse-dev \
+                 libva-dev \
+                 libxcb-randr0-dev \
+                 libxcb-shape0-dev \
+                 libxcb-xfixes0-dev \
+                 libxdo-dev \
+                 libxfixes-dev \
+                 llvm-dev \
+                 nasm \
+                 ninja-build \
+                 openjdk-17-jdk-headless \
+                 pkg-config \
+                 tree \
+                 wget
 
       - name: Checkout source code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -1265,21 +1257,12 @@ jobs:
           # env.ANDROID_SIGN_TOOL_VERSION is set by Step "Setup sign tool version variable"
           BUILD_TOOLS_VERSION: ${{ env.ANDROID_SIGN_TOOL_VERSION }}
 
-      - name: Upload Artifacts
-        if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
+      - name: Upload unsigned Universal APK to Artifacts
+        if: env.ANDROID_SIGNING_KEY == null && env.UPLOAD_ARTIFACT == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.apk
-          path: ${{steps.sign-rustdesk.outputs.signedReleaseFile}}
-
-      - name: Publish signed apk package
-        if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
-        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
-        with:
-          prerelease: true
-          tag_name: ${{ env.TAG_NAME }}
-          files: |
-            ${{steps.sign-rustdesk.outputs.signedReleaseFile}}
+          name: agatdesk-android-unsigned-universal
+          path: signed-apk/*.apk
 
       - name: Publish unsigned apk package
         if: env.ANDROID_SIGNING_KEY == null && env.UPLOAD_ARTIFACT == 'true'
